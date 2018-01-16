@@ -6,42 +6,46 @@ let hashFragment = '';
 let observer = null;
 let asyncTimerId = null;
 
-function reset() {
-  hashFragment = '';
-  if (observer !== null) observer.disconnect();
-  if (asyncTimerId !== null) {
-    window.clearTimeout(asyncTimerId);
-    asyncTimerId = null;
-  }
-}
-
-function getElAndScroll() {
-  const element = document.getElementById(hashFragment);
-  if (element !== null) {
-    element.scrollIntoView();
-    reset();
-    return true;
-  }
-  return false;
-}
-
-function hashLinkScroll() {
-  // Push onto callback queue so it runs after the DOM is updated
-  window.setTimeout(() => {
-    if (getElAndScroll() === false) {
-      if (observer === null) {
-        observer = new MutationObserver(getElAndScroll);
-      }
-      observer.observe(document, { attributes: true, childList: true, subtree: true });
-      // if the element doesn't show up in 10 seconds, stop checking
-      asyncTimerId = window.setTimeout(() => {
-        reset();
-      }, 10000);
-    }
-  }, 0);
-}
 
 export function HashLink(props) {
+  function reset() {
+    hashFragment = '';
+    if (observer !== null) observer.disconnect();
+    if (asyncTimerId !== null) {
+      window.clearTimeout(asyncTimerId);
+      asyncTimerId = null;
+    }
+  }
+  
+  function getElAndScroll() {
+    const element = document.getElementById(hashFragment);
+    if (element !== null) {
+      element.scrollIntoView();
+      if (props.offset) {
+        window.scrollBy(0, props.offset);
+      }
+      reset();
+      return true;
+    }
+    return false;
+  }
+  
+  function hashLinkScroll() {
+    // Push onto callback queue so it runs after the DOM is updated
+    window.setTimeout(() => {
+      if (getElAndScroll() === false) {
+        if (observer === null) {
+          observer = new MutationObserver(getElAndScroll);
+        }
+        observer.observe(document, { attributes: true, childList: true, subtree: true });
+        // if the element doesn't show up in 10 seconds, stop checking
+        asyncTimerId = window.setTimeout(() => {
+          reset();
+        }, 10000);
+      }
+    }, 0);
+  }
+
   function handleClick(e) {
     reset();
     if (props.onClick) props.onClick(e);
@@ -62,4 +66,5 @@ HashLink.propTypes = {
     PropTypes.string,
     PropTypes.object,
   ]),
+  offset: PropTypes.number
 };
